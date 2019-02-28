@@ -94,7 +94,6 @@ class ResampleAnnualKeepMD():
         Returns
         ----------
         self: object
-        
         """
         
         import copy
@@ -104,7 +103,6 @@ class ResampleAnnualKeepMD():
         assert date_col in data.columns, 'date_col not found in data frame column list.'
         assert groupby_col in data.columns, 'groupby_col not found in data frame column list.'      
     
-        
         self.data_ = copy.deepcopy(data)
         self.date_col = date_col
         self.groupby_col = groupby_col     
@@ -148,7 +146,6 @@ class ResampleAnnualKeepMD():
         
         Further information about pandas.to_datetime:
             https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-    
         """
         
         self.data_[self.date_col] = self.data_[self.date_col].replace(r'^\s*$', np.nan, regex=True)
