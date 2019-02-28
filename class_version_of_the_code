@@ -168,8 +168,7 @@ class ResampleAnnualKeepMD():
         self.assert_data()
         
         self.data[self.date_col] = self.data[self.date_col].replace(r'^\s*$', np.nan, regex=True)
-        
-        
+             
         NaN_locs = np.logical_or(self.data[self.date_col].isnull(), self.data[self.groupby_col].isnull())
         if NaN_locs.any():
             self.data_ = copy.deepcopy(self.data.loc[~NaN_locs, :])
