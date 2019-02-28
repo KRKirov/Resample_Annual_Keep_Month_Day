@@ -12,7 +12,6 @@ class ResampleAnnualKeepMD():
     
     Examples
     --------
-    
     resample_annual = ResampleAnnualKeepMD()
     resample_annual.fit(df, 'Date', 'Id')
     df_resampled = resample_annual.transform()
@@ -75,8 +74,6 @@ class ResampleAnnualKeepMD():
         self.date_col = None
         self.groupby_col = None
         
-
-
     def fit(self, data, date_col, groupby_col):
         """ Receive data and check input consistency.
         
@@ -113,8 +110,7 @@ class ResampleAnnualKeepMD():
         assert isinstance(data, pd.DataFrame) ,'The function expects a data frame as a first argument.'
         assert date_col in data.columns, 'date_col not found in data frame column list.'
         assert groupby_col in data.columns, 'groupby_col not found in data frame column list.'      
-    
-        
+         
         self.data = copy.deepcopy(data)
         self.date_col = date_col
         self.groupby_col = groupby_col
@@ -169,8 +165,7 @@ class ResampleAnnualKeepMD():
         self = self.assert_data()
         
         self.data[self.date_col] = self.data[self.date_col].replace(r'^\s*$', np.nan, regex=True)
-        
-        
+            
         NaN_locs = np.logical_or(self.data[self.date_col].isnull(), self.data[self.groupby_col].isnull())
         if NaN_locs.any():
             self.data_ = copy.deepcopy(self.data.loc[~NaN_locs, :])
