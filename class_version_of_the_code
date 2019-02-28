@@ -1,0 +1,231 @@
+
+class ResampleAnnualKeepMD():
+    """ Annual frequency resampling of a date column in a data frame while
+    preserving the day and month offsets in date columns with mixed dates.
+
+    This class performs resampling of dates grouped together by a common 
+    value in another data frame column. The resampling in each group is
+    vectorised and based on native pandas operations.
+    
+    The class can handle more than one day-month combination per group.
+    NaN values in the date column or the groupby column are filtered but
+    preserved and can be appended to the resampled data if desired. 
+    
+    Examples
+    --------
+    resample_annual = ResampleAnnualKeepMD()
+    resample_annual.fit(df, 'Date', 'Id')
+    df_resampled = resample_annual.transform()
+    df_resampled_full = resample_annual.append_nan()
+    
+    df
+    Out[18]: 
+        Id        Date  Value Currency
+    0  2.0  20-03-2008     16      GBP
+    1  2.0  20-03-2011     19      GBP
+    2  2.0  05-06-2012     32      GBP
+    3  2.0  05-06-2015     36      GBP
+    4  4.0  03-03-2016     45      EUR
+    5  4.0                 61      EUR
+    6  4.0                 73      EUR
+    7  NaN  07-07-2020     98      EUR
+    
+    df_resampled
+    Out[19]: 
+        Id       Date  Value Currency
+    0  2.0 2008-03-20   16.0      GBP
+    1  2.0 2009-03-20    NaN      NaN
+    2  2.0 2010-03-20    NaN      NaN
+    3  2.0 2011-03-20   19.0      GBP
+    4  2.0 2012-06-05   32.0      GBP
+    5  2.0 2013-06-05    NaN      NaN
+    6  2.0 2014-06-05    NaN      NaN
+    7  2.0 2015-06-05   36.0      GBP
+    8  4.0 2016-03-03   45.0      EUR
+    
+    df_resampled_full
+    Out[20]: 
+        Id       Date  Value Currency
+    0   2.0 2008-03-20   16.0      GBP
+    1   2.0 2009-03-20    NaN      NaN
+    2   2.0 2010-03-20    NaN      NaN
+    3   2.0 2011-03-20   19.0      GBP
+    4   2.0 2012-06-05   32.0      GBP
+    5   2.0 2013-06-05    NaN      NaN
+    6   2.0 2014-06-05    NaN      NaN
+    7   2.0 2015-06-05   36.0      GBP
+    8   4.0 2016-03-03   45.0      EUR
+    9   4.0        NaT   61.0      EUR
+    10  4.0        NaT   73.0      EUR
+    11  NaN 2020-07-07   98.0      EUR    
+    
+    Notes
+    -----
+    This class does not transform the original data frame that is passed
+    to it. To tranform an existing data frame assign to it the output of
+    the transform() or append() method. 
+    """
+
+    def fit(self, data, date_col, groupby_col):
+        """ Receive data and check input consistency.
+        
+        Parameters
+        ----------
+        data : pd.DataFrame,
+            object of type data frame.
+        
+        date_col : str,
+            name of the date column in data.
+        
+        groupby_col : str,
+            name of the data frame column by which dates are grouped
+        
+        Attributes
+        ----------
+        data_ : data frame,
+            the data frame to be resampled
+            
+        date_col : str,
+            name of the date column
+            
+        groupby_col : str,
+            name of the column by which dates are grouped
+            
+        Returns
+        ----------
+        self: object
+        
+        """
+        
+        import copy
+        
+        # Verify input consistency
+        assert isinstance(data, pd.DataFrame) ,'The function expects a data frame as a first argument.'
+        assert date_col in data.columns, 'date_col not found in data frame column list.'
+        assert groupby_col in data.columns, 'groupby_col not found in data frame column list.'      
+    
+        
+        self.data_ = copy.deepcopy(data)
+        self.date_col = date_col
+        self.groupby_col = groupby_col     
+        return self
+    
+    def transform(self, dayfirst=False, yearfirst=False, format=None, dt_format=None):
+        """ Resample the data and return a new data frame object.
+        
+        Parameters
+        ----------
+        dayfirst : bool, default: False
+            parse dates with the day first, e.g. dd-mm-yyyy
+            
+        yearfirst: bool, default: False
+           parse dates with the year first, e.g. yyyy-mm-dd
+           
+        format : str, default None
+            strftime to parse time, eg “%d/%m/%Y”, note that “%f” will parse all the way up to nanoseconds.
+            
+        dt_format : str, default: None
+            used to specify the desired output format of date_col.
+            String to pass to dt_format: '%d/%m/%Y' or '%m/%d/%Y' .
+  
+        Attributes
+        ----------
+        data_nan : data frame,
+            part of the data frame with rows containing NaNs in 
+            date_col or groupby_col
+            
+        Returns
+        --------
+        self.data_ : the resampled data frame
+    
+        Notes
+        -----
+        1.Tne function strips space characters in date_col and fills empty cells
+        with NaNs. 
+        2. Date_col is converted to datetime format. The default parsing is
+        mm-dd-yyyy. It is possible to change the parsing by specifying the 
+        dayfirst, yearfirst parameters to be True.
+        
+        Further information about pandas.to_datetime:
+            https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
+    
+        """
+        
+        self.data_[self.date_col] = self.data_[self.date_col].replace(r'^\s*$', np.nan, regex=True)
+ 
+        try:
+            self.data_[self.date_col] = pd.to_datetime(
+                                            self.data_[self.date_col], 
+                                            infer_datetime_format=True,
+                                            dayfirst=False,
+                                            yearfirst=False,
+                                            format=None).sort_values()
+        except:
+            print('Error: Unable to convert date column to datetime type')
+        
+        # Copy NaN filled date_col and groupby_col in self.data_nan
+        NaN_locs = np.logical_or(self.data_[self.date_col].isnull(), self.data_[self.groupby_col].isnull())
+        self.data_nan = self.data_.loc[NaN_locs, :]
+        
+        # Resampling block
+        self.data_['Month'] = self.data_[self.date_col].dt.month - 1
+        self.data_['Day'] = self.data_[self.date_col].dt.day - 1
+        self.data_ = self.data_.groupby(self.groupby_col).resample('AS', on=self.date_col).last().drop([self.groupby_col, self.date_col], axis=1).reset_index()
+        self.data_[['Month', 'Day']] = self.data_[['Month', 'Day']].fillna(method='ffill')
+        self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[M]') + self.data_['Month'].values * np.timedelta64(1, 'M')).astype('M8[D]')
+        self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[D]') + self.data_['Day'].values * np.timedelta64(1, 'D')).astype('M8[D]')
+        self.data_.drop(['Month', 'Day'], axis=1, inplace=True)
+        
+        if dt_format is not None:
+            self.change_dt_format(dt_format)
+        return self.data_
+    
+    def append_nan(self):
+        """ Append rows containing NaNs in date_col or groupby_col to the
+        resampled data frame and return the new object. """
+        
+        return self.data_.append(self.data_nan).reset_index(drop=True)
+    
+    def change_dt_format(self, dt_format=None):
+        """ Change date_col to a specific date format, e.g. from yyyy-mm-dd to
+        dd-mm-yyyy or to mm-dd-yyyy
+        
+        Parameters
+        ----------
+        dt_format : str, default: None
+            used to specify the desired output format of date_col.
+            String to pass to dt_format: '%d/%m/%Y' or '%m/%d/%Y' .
+            
+        Examples
+        ---------
+        df_resampled = resample_annual.change_dt_format('%d/%m/%Y')
+        
+        df_resampled
+        Out[61]: 
+            Id        Date  Value Currency
+        0  2.0  20/03/2008   16.0      GBP
+        1  2.0  20/03/2009    NaN      NaN
+        2  2.0  20/03/2010    NaN      NaN
+        3  2.0  20/03/2011   19.0      GBP
+        4  2.0  05/06/2012   32.0      GBP
+        5  2.0  05/06/2013    NaN      NaN
+        6  2.0  05/06/2014    NaN      NaN
+        7  2.0  05/06/2015   36.0      GBP
+        8  4.0  03/03/2016   45.0      EUR
+            
+        Notes
+        ------
+        1. After conversion the type of date_col changes to str.
+        2. The method changes the date_col format and returns the whole
+           resampled data frame
+        """
+        
+        if dt_format is not None:
+            if (dt_format == '%d/%m/%Y') or (dt_format == '%m/%d/%Y'):
+                self.data_[self.date_col] = self.data_[self.date_col].dt.strftime(dt_format)
+                self.data_nan[self.date_col] = self.data_nan[self.date_col].dt.strftime(dt_format)
+            else:
+                print('\nReturning object without changing the date column to the desired format.\n')
+                print('To reformat date column pass a valid dt_format: ')
+                print('"%d/%m/%Y" or "%m/%d/%Y".')
+        return self.data_
