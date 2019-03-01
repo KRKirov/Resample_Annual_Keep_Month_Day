@@ -148,8 +148,7 @@ class ResampleAnnualKeepMD():
             
         Returns
         --------
-
-self.data_ : the resampled data frame
+        self.data_ : the resampled data frame
     
         Notes
         -----
