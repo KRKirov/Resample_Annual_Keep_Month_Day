@@ -1,5 +1,4 @@
 # Resample_Annual_Keep_Month_Day
-Annual frequency resampling of a date column in a data frame while preserving the day and month offsets in date columns with mixed dates.
 
 This class performs resampling of dates grouped together by a common value in another data frame column. The resampling in each group is vectorised and based on native pandas operations. The class can handle more than one day-month combination per group. NaN values in the date column or the groupby column are filtered but preserved and can be appended to the resampled data if desired. 
     
