@@ -13,7 +13,6 @@ class ResampleAnnualKeepMD():
     
     Examples
     --------
-    
     resample_annual = ResampleAnnualKeepMD()
     resample_annual.fit(df, 'Date', 'Id')
     df_resampled = resample_annual.transform()
@@ -75,6 +74,7 @@ class ResampleAnnualKeepMD():
         self.data_nan = None
         self.date_col = None
         self.groupby_col = None
+        self.transform_status = None
 
     def fit(self, data, date_col, groupby_col):
         """ Receive data and check input consistency.
@@ -145,6 +145,11 @@ class ResampleAnnualKeepMD():
         data_nan : data frame,
             part of the input data frame with rows containing NaNs in 
             date_col or groupby_col
+        
+        transform_status : str,
+            indicates whether the data frame has been resampled, once set to 
+            "On" no new transforms take place, instead the data_ attribute is
+            returned
             
         Returns
         --------
@@ -164,32 +169,37 @@ class ResampleAnnualKeepMD():
         
         import copy
         
-        self.assert_data()
-        
-        self.data[self.date_col] = self.data[self.date_col].replace(r'^\s*$', np.nan, regex=True)
+        if self.transform_status is None:
+            self.assert_data()
             
-        NaN_locs = np.logical_or(self.data[self.date_col].isnull(), self.data[self.groupby_col].isnull())
-        if NaN_locs.any():
-            self.data_ = copy.deepcopy(self.data.loc[~NaN_locs, :])
-            self.data_nan = copy.deepcopy(self.data.loc[NaN_locs, :])
-        else:
-            self.data_ = copy.deepcopy(self.data.loc[:, :])
+            self.data[self.date_col] = self.data[self.date_col].replace(r'^\s*$', np.nan, regex=True)
+            
+            NaN_locs = np.logical_or(self.data[self.date_col].isnull(), self.data[self.groupby_col].isnull())
+            if NaN_locs.any():
+                self.data_ = copy.deepcopy(self.data.loc[~NaN_locs, :])
+                self.data_nan = copy.deepcopy(self.data.loc[NaN_locs, :])
+            else:
+                self.data_ = copy.deepcopy(self.data.loc[:, :])
          
-        self.data[self.date_col] = self.to_datetime(dayfirst=False,
+            self.data[self.date_col] = self.to_datetime(dayfirst=False,
                                                      yearfirst=False,
                                                      format=None,
                                                      dt_format=None)
-        # Resampling block
-        self.data_['Month'] = self.data_[self.date_col].dt.month - 1
-        self.data_['Day'] = self.data_[self.date_col].dt.day - 1
-        self.data_ = self.data_.groupby(self.groupby_col).resample('AS', on=self.date_col).last().drop([self.groupby_col, self.date_col], axis=1).reset_index()
-        self.data_[['Month', 'Day']] = self.data_[['Month', 'Day']].fillna(method='ffill')
-        self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[M]') + self.data_['Month'].values * np.timedelta64(1, 'M')).astype('M8[D]')
-        self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[D]') + self.data_['Day'].values * np.timedelta64(1, 'D')).astype('M8[D]')
-        self.data_.drop(['Month', 'Day'], axis=1, inplace=True)
+   
+            # Resampling block
+            self.data_['Month'] = self.data_[self.date_col].dt.month - 1
+            self.data_['Day'] = self.data_[self.date_col].dt.day - 1
+            self.data_ = self.data_.groupby(self.groupby_col).resample('AS', on=self.date_col).last().drop([self.groupby_col, self.date_col], axis=1).reset_index()
+            self.data_[['Month', 'Day']] = self.data_[['Month', 'Day']].fillna(method='ffill')
+            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[M]') + self.data_['Month'].values * np.timedelta64(1, 'M')).astype('M8[D]')
+            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[D]') + self.data_['Day'].values * np.timedelta64(1, 'D')).astype('M8[D]')
+            self.data_.drop(['Month', 'Day'], axis=1, inplace=True)
         
-        if dt_format is not None:
-            self.change_dt_format(dt_format)
+            if dt_format is not None:
+                self.change_dt_format(dt_format)         
+            self.transform_status = 'On'
+        else:
+            print('\nObject already transformed, returning the resampled data frame.\n')
         return self.data_
     
     def fit_transform(self, data, date_col, groupby_col, dayfirst=False,
@@ -283,4 +293,4 @@ class ResampleAnnualKeepMD():
         assert self.data is not None, 'No data frame found. Use the fit method first'
         assert self.date_col is not None, 'No data column name found. Use the fit method first'
         assert self.groupby_col is not None, 'No groupby column name found. Use the fit method first'
-        
+ 
