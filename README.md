@@ -7,7 +7,7 @@ Examples
     
     resample_annual = ResampleAnnualKeepMD()
     resample_annual.fit(df, 'Date', 'Id')
-    df_resampled = resample_annual.transform()
+    df_resampled = resample_annual.transform(dayfirst=True, dt_format='%d/%m/%Y')
     df_resampled_full = resample_annual.append_nan()
     
     df
@@ -23,33 +23,33 @@ Examples
     7  NaN  07-07-2020     98      EUR
     
     df_resampled
-    Out[19]: 
-        Id       Date  Value Currency
-    0  2.0 2008-03-20   16.0      GBP
-    1  2.0 2009-03-20    NaN      NaN
-    2  2.0 2010-03-20    NaN      NaN
-    3  2.0 2011-03-20   19.0      GBP
-    4  2.0 2012-06-05   32.0      GBP
-    5  2.0 2013-06-05    NaN      NaN
-    6  2.0 2014-06-05    NaN      NaN
-    7  2.0 2015-06-05   36.0      GBP
-    8  4.0 2016-03-03   45.0      EUR
+    Out[16]: 
+        Id        Date  Value Currency
+    0  2.0  20/03/2008   16.0      GBP
+    1  2.0  20/03/2009    NaN      NaN
+    2  2.0  20/03/2010    NaN      NaN
+    3  2.0  20/03/2011   19.0      GBP
+    4  2.0  05/06/2012   32.0      GBP
+    5  2.0  05/06/2013    NaN      NaN
+    6  2.0  05/06/2014    NaN      NaN
+    7  2.0  05/06/2015   36.0      GBP
+    8  4.0  03/03/2016   45.0      EUR
     
     df_resampled_full
-    Out[20]: 
-        Id       Date  Value Currency
-    0   2.0 2008-03-20   16.0      GBP
-    1   2.0 2009-03-20    NaN      NaN
-    2   2.0 2010-03-20    NaN      NaN
-    3   2.0 2011-03-20   19.0      GBP
-    4   2.0 2012-06-05   32.0      GBP
-    5   2.0 2013-06-05    NaN      NaN
-    6   2.0 2014-06-05    NaN      NaN
-    7   2.0 2015-06-05   36.0      GBP
-    8   4.0 2016-03-03   45.0      EUR
-    9   4.0        NaT   61.0      EUR
-    10  4.0        NaT   73.0      EUR
-    11  NaN 2020-07-07   98.0      EUR    
+    Out[18]: 
+         Id        Date  Value Currency
+    0   2.0  20/03/2008   16.0      GBP
+    1   2.0  20/03/2009    NaN      NaN
+    2   2.0  20/03/2010    NaN      NaN
+    3   2.0  20/03/2011   19.0      GBP
+    4   2.0  05/06/2012   32.0      GBP
+    5   2.0  05/06/2013    NaN      NaN
+    6   2.0  05/06/2014    NaN      NaN
+    7   2.0  05/06/2015   36.0      GBP
+    8   4.0  03/03/2016   45.0      EUR
+    9   4.0         NaT   61.0      EUR
+    10  4.0         NaT   73.0      EUR
+    11  NaN  07/07/2020   98.0      EUR   
     
 Notes
 ------
