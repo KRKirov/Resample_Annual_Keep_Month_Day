@@ -15,7 +15,7 @@ class ResampleAnnualKeepMD():
     --------
     resample_annual = ResampleAnnualKeepMD()
     resample_annual.fit(df, 'Date', 'Id')
-    df_resampled = resample_annual.transform()
+    df_resampled = resample_annual.transform(dayfirst=True, dt_format='%d/%m/%Y')
     df_resampled_full = resample_annual.append_nan()
     
     df
@@ -31,33 +31,33 @@ class ResampleAnnualKeepMD():
     7  NaN  07-07-2020     98      EUR
     
     df_resampled
-    Out[19]: 
-        Id       Date  Value Currency
-    0  2.0 2008-03-20   16.0      GBP
-    1  2.0 2009-03-20    NaN      NaN
-    2  2.0 2010-03-20    NaN      NaN
-    3  2.0 2011-03-20   19.0      GBP
-    4  2.0 2012-06-05   32.0      GBP
-    5  2.0 2013-06-05    NaN      NaN
-    6  2.0 2014-06-05    NaN      NaN
-    7  2.0 2015-06-05   36.0      GBP
-    8  4.0 2016-03-03   45.0      EUR
+    Out[16]: 
+        Id        Date  Value Currency
+    0  2.0  20/03/2008   16.0      GBP
+    1  2.0  20/03/2009    NaN      NaN
+    2  2.0  20/03/2010    NaN      NaN
+    3  2.0  20/03/2011   19.0      GBP
+    4  2.0  05/06/2012   32.0      GBP
+    5  2.0  05/06/2013    NaN      NaN
+    6  2.0  05/06/2014    NaN      NaN
+    7  2.0  05/06/2015   36.0      GBP
+    8  4.0  03/03/2016   45.0      EUR
     
     df_resampled_full
-    Out[20]: 
-        Id       Date  Value Currency
-    0   2.0 2008-03-20   16.0      GBP
-    1   2.0 2009-03-20    NaN      NaN
-    2   2.0 2010-03-20    NaN      NaN
-    3   2.0 2011-03-20   19.0      GBP
-    4   2.0 2012-06-05   32.0      GBP
-    5   2.0 2013-06-05    NaN      NaN
-    6   2.0 2014-06-05    NaN      NaN
-    7   2.0 2015-06-05   36.0      GBP
-    8   4.0 2016-03-03   45.0      EUR
-    9   4.0        NaT   61.0      EUR
-    10  4.0        NaT   73.0      EUR
-    11  NaN 2020-07-07   98.0      EUR    
+    Out[18]: 
+         Id        Date  Value Currency
+    0   2.0  20/03/2008   16.0      GBP
+    1   2.0  20/03/2009    NaN      NaN
+    2   2.0  20/03/2010    NaN      NaN
+    3   2.0  20/03/2011   19.0      GBP
+    4   2.0  05/06/2012   32.0      GBP
+    5   2.0  05/06/2013    NaN      NaN
+    6   2.0  05/06/2014    NaN      NaN
+    7   2.0  05/06/2015   36.0      GBP
+    8   4.0  03/03/2016   45.0      EUR
+    9   4.0         NaT   61.0      EUR
+    10  4.0         NaT   73.0      EUR
+    11  NaN  07/07/2020   98.0      EUR   
     
     Notes
     -----
@@ -74,7 +74,8 @@ class ResampleAnnualKeepMD():
         self.data_nan = None
         self.date_col = None
         self.groupby_col = None
-        self.transform_status = None
+        self._fit_status = None
+        self._transform_status = None
 
     def fit(self, data, date_col, groupby_col):
         """ Receive data and check input consistency.
@@ -92,31 +93,41 @@ class ResampleAnnualKeepMD():
         
         Attributes
         ----------
-        data : pd.DataFrame,
+        data : pd.DataFrame, default: None
             the data frame to be resampled
             
-        date_col : str,
+        date_col : str, default: None
             name of the date column
             
-        groupby_col : str,
+        groupby_col : str, default: None
             name of the column by which dates are grouped
+            
+        _fit_status : str, default: None
+            indicates whether the .fit() method has been deployed, once set to 
+            "On" subsequent deployment of the .fit() method is blocked
+            returned
             
         Returns
         ----------
         self: object
         """
         
-        import copy
+        if self._fit_status is None:
+            import copy
         
-        # Verify input consistency
-        assert isinstance(data, pd.DataFrame) ,'The function expects a data frame as a first argument.'
-        assert date_col in data.columns, 'date_col not found in data frame column list.'
-        assert groupby_col in data.columns, 'groupby_col not found in data frame column list.'      
+            # Verify input consistency
+            assert isinstance(data, pd.DataFrame) ,'The function expects a data frame as a first argument.'
+            assert date_col in data.columns, 'date_col not found in data frame column list.'
+            assert groupby_col in data.columns, 'groupby_col not found in data frame column list.'      
           
-        self.data = copy.deepcopy(data)
-        self.date_col = date_col
-        self.groupby_col = groupby_col
-        return self
+            self.data = copy.deepcopy(data)
+            self.date_col = date_col
+            self.groupby_col = groupby_col
+            self._fit_status = 'On'
+        else:
+            print('\nFit already performed. Reinstantiate class to perform a new')
+            print('fit or create a new class instance.')
+        return self    
     
     def transform(self, dayfirst=False, yearfirst=False, format=None, dt_format=None):
         """ Resample the data and return a new data frame object.
@@ -138,15 +149,15 @@ class ResampleAnnualKeepMD():
   
         Attributes
         ----------
-        data_ : pd.DataFrame,
+        data_ : pd.DataFrame, default: None
             part of the input data frame with rows which do not contain NaNs 
             in either date_col or groupby_col
         
-        data_nan : data frame,
+        data_nan : data frame, default: None
             part of the input data frame with rows containing NaNs in 
             date_col or groupby_col
-        
-        transform_status : str,
+            
+        transform_status : str, default: None
             indicates whether the data frame has been resampled, once set to 
             "On" no new transforms take place, instead the data_ attribute is
             returned
@@ -162,6 +173,7 @@ class ResampleAnnualKeepMD():
         2. Date_col is converted to datetime format. The default parsing is
         mm-dd-yyyy. It is possible to change the parsing by specifying the 
         dayfirst, yearfirst parameters to be True.
+        3. Upon a successful transform the .data attribute is reset to None.
         
         Further information about pandas.to_datetime:
             https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -169,46 +181,51 @@ class ResampleAnnualKeepMD():
         
         import copy
         
-        if self.transform_status is None:
-            self.assert_data()
-            
+        if self._transform_status is None:
+        
+            self._assert_data()
+        
             self.data[self.date_col] = self.data[self.date_col].replace(r'^\s*$', np.nan, regex=True)
             
             NaN_locs = np.logical_or(self.data[self.date_col].isnull(), self.data[self.groupby_col].isnull())
+            
             if NaN_locs.any():
                 self.data_ = copy.deepcopy(self.data.loc[~NaN_locs, :])
                 self.data_nan = copy.deepcopy(self.data.loc[NaN_locs, :])
             else:
                 self.data_ = copy.deepcopy(self.data.loc[:, :])
          
-            self.data[self.date_col] = self.to_datetime(dayfirst=False,
-                                                     yearfirst=False,
-                                                     format=None,
-                                                     dt_format=None)
+            self.data_[self.date_col] = self._to_datetime(dayfirst=dayfirst,
+                                                          yearfirst=yearfirst,
+                                                          format=format,
+                                                          dt_format=dt_format)
    
             # Resampling block
             self.data_['Month'] = self.data_[self.date_col].dt.month - 1
             self.data_['Day'] = self.data_[self.date_col].dt.day - 1
-            self.data_ = self.data_.groupby(self.groupby_col).resample('AS', on=self.date_col).last().drop([self.groupby_col, self.date_col], axis=1).reset_index()
+            self.data_ = self.data_.groupby(self.groupby_col).resample('AS', on=self.date_col).first() \
+                         .drop([self.groupby_col, self.date_col], axis=1).reset_index()
             self.data_[['Month', 'Day']] = self.data_[['Month', 'Day']].fillna(method='ffill')
-            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[M]') + self.data_['Month'].values * np.timedelta64(1, 'M')).astype('M8[D]')
-            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[D]') + self.data_['Day'].values * np.timedelta64(1, 'D')).astype('M8[D]')
+            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[M]') \
+                                         + self.data_['Month'].values * np.timedelta64(1, 'M')).astype('M8[D]')
+            self.data_[self.date_col] = (self.data_[self.date_col].values.astype('M8[D]') \
+                                         + self.data_['Day'].values * np.timedelta64(1, 'D')).astype('M8[D]')
             self.data_.drop(['Month', 'Day'], axis=1, inplace=True)
         
             if dt_format is not None:
-                self.change_dt_format(dt_format)         
-            self.transform_status = 'On'
+                self.change_dt_format(dt_format)
+            
+            self._transform_status = 'On'
+            self.data = None
         else:
             print('\nObject already transformed, returning the resampled data frame.\n')
         return self.data_
     
-    def fit_transform(self, data, date_col, groupby_col, dayfirst=False,
-                      yearfirst=False, format=None, dt_format=None):
+    def fit_transform(self, data, date_col, groupby_col, dayfirst=False, yearfirst=False, format=None, dt_format=None):
         """ Receive data frame and resample date column """
         
         self = self.fit(data, date_col, groupby_col)
-        self.data_ = self.transform(dayfirst=False, yearfirst=False,
-                              format=None, dt_format=None)
+        self.data_ = self.transform(dayfirst=dayfirst, yearfirst=yearfirst, format=format, dt_format=dt_format)
         return self.data_
     
     def append_nan(self):
@@ -229,20 +246,20 @@ class ResampleAnnualKeepMD():
             
         Examples
         ---------
-        df_resampled = resample_annual.change_dt_format('%d/%m/%Y')
+        df_resampled = resample_annual.change_dt_format('%Y/%m/%d')
         
         df_resampled
-        Out[61]: 
+        Out[20]: 
             Id        Date  Value Currency
-        0  2.0  20/03/2008   16.0      GBP
-        1  2.0  20/03/2009    NaN      NaN
-        2  2.0  20/03/2010    NaN      NaN
-        3  2.0  20/03/2011   19.0      GBP
-        4  2.0  05/06/2012   32.0      GBP
-        5  2.0  05/06/2013    NaN      NaN
-        6  2.0  05/06/2014    NaN      NaN
-        7  2.0  05/06/2015   36.0      GBP
-        8  4.0  03/03/2016   45.0      EUR
+        0  2.0  2008/03/20   16.0      GBP
+        1  2.0  2009/03/20    NaN      NaN
+        2  2.0  2010/03/20    NaN      NaN
+        3  2.0  2011/03/20   19.0      GBP
+        4  2.0  2012/06/05   32.0      GBP
+        5  2.0  2013/06/05    NaN      NaN
+        6  2.0  2014/06/05    NaN      NaN
+        7  2.0  2015/06/05   36.0      GBP
+        8  4.0  2016/03/03   45.0      EUR
         
         Returns
         --------
@@ -252,17 +269,20 @@ class ResampleAnnualKeepMD():
         ------
         1. After conversion the type of date_col changes to str.
         2. The method changes the date_col format and returns the whole
-           resampled data frame
+           resampled data frame.
+        3. The same change in format is applied concurrently to the data_nan
+           attribute - the part of the data frame with NaNs in the date and 
+           groupby columns of the data frame.
         """
         
         dt_list = ['%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d', '%Y/%d/%m']
         
         # Check the class fit() method has been used
-        self.assert_data()
+        self._assert_data()
         
         if dt_format is not None:
             if dt_format in dt_list:
-                self.data_.loc[:, self.date_col] = self.to_datetime()
+                self.data_.loc[:, self.date_col] = self._to_datetime(dt_format=dt_format)
                 self.data_.loc[:, self.date_col] = self.data_[self.date_col].dt.strftime(dt_format)
                 if isinstance(self.data_nan, pd.DataFrame):
                     self.data_nan.loc[:, self.date_col] = pd.to_datetime(self.data_nan[self.date_col])
@@ -273,24 +293,30 @@ class ResampleAnnualKeepMD():
                 print('"%d/%m/%Y" or "%m/%d/%Y".')
         return self.data_
     
-    def to_datetime(self, dayfirst=False, yearfirst=False, format=None, dt_format=None):
+    def _to_datetime(self, dayfirst=False, yearfirst=False, format=None, dt_format=None):
         """ Convert date column to datetime type """
                
         try:
-            self.data_.loc[:, self.date_col] = pd.to_datetime(
-                                            self.data_.loc[:, self.date_col], 
-                                            infer_datetime_format=True,
-                                            dayfirst=False,
-                                            yearfirst=False,
-                                            format=None).sort_values()
+            self.data_.loc[:, self.date_col] = pd.to_datetime(self.data_.loc[:, self.date_col], 
+                                                              infer_datetime_format=True,
+                                                              dayfirst=dayfirst,
+                                                              yearfirst=yearfirst,
+                                                              format=format).sort_values()
+            
+            if isinstance(self.data_nan, pd.DataFrame):
+                self.data_nan.loc[:, self.date_col] = pd.to_datetime(self.data_nan.loc[:, self.date_col], 
+                                                                     infer_datetime_format=True,
+                                                                     dayfirst=dayfirst,
+                                                                     yearfirst=yearfirst,
+                                                                     format=format).sort_values()
         except:
             print('\nError: Unable to convert date column to datetime type')
         return self.data_[self.date_col]
     
-    def assert_data(self):
+    def _assert_data(self):
         """ Assert the method fit has received the required data """
         
-        assert self.data is not None, 'No data frame found. Use the fit method first'
+        assert self._fit_status is not None, 'No data frame found. Use the fit method first'
         assert self.date_col is not None, 'No data column name found. Use the fit method first'
         assert self.groupby_col is not None, 'No groupby column name found. Use the fit method first'
- 
+    
