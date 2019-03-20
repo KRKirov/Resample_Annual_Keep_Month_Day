@@ -275,7 +275,8 @@ class ResampleAnnualKeepMD():
            groupby columns of the data frame.
         """
         
-        dt_list = ['%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d', '%Y/%d/%m']
+        dt_list = ['%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d', '%Y/%d/%m', \
+                   '%d-%m-%Y', '%m-%d-%Y', '%Y-%m-%d', '%Y-%d-%m']
         
         # Check the class fit() method has been used
         self._assert_data()
