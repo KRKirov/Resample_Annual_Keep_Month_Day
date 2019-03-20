@@ -291,7 +291,7 @@ class ResampleAnnualKeepMD():
             else:
                 print('\nReturning object without changing the date column to the desired format.\n')
                 print('To reformat date column pass a valid dt_format: ')
-                print('"%d/%m/%Y" or "%m/%d/%Y".')
+                print(dt_list)
         return self.data_
     
     def _to_datetime(self, dayfirst=False, yearfirst=False, format=None, dt_format=None):
