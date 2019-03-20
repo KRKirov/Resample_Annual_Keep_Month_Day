@@ -53,7 +53,10 @@ Examples
 
 The fit and transform commands can be conveniently performed in one step.
 
-    df_resampled = resample_annual.fit_transform(data=df,date_col='Date', groupby_col='Id', dt_format='%Y/%m/%d')
+    df_resampled = resample_annual.fit_transform(data=df,
+                                                 date_col='Date',
+                                                 groupby_col='Id',
+                                                 dt_format='%Y/%m/%d')
 
     df_resampled
     Out[14]: 
